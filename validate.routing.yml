@@ -1,0 +1,7 @@
+validate.valrouting:
+  path: '/validate'
+  defaults:
+    _title: 'Validate'
+    _form: '\Drupal\validate\Form\Form'
+  requirements:
+    _permission: 'access content'
