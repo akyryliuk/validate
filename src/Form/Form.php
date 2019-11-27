@@ -204,7 +204,7 @@ class Form extends FormBase {
 
     if ($_POST['op'] == "Submit") {
       $array_rows = [];
-      $index = 0;
+      $index = -1;
       foreach ($_POST as $key => $value) {
         if ((int) $key) {
           $id = explode('-', $key);
