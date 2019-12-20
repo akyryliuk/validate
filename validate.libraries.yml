@@ -1,4 +1,4 @@
-validate_css:
+validate_css_js:
   version: 1.x
   css:
     theme:

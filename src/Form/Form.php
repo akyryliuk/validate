@@ -4,7 +4,6 @@ namespace Drupal\validate\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Messenger;
 
 /**
  * Class Form
@@ -14,47 +13,18 @@ use Drupal\Core\Messenger;
 class Form extends FormBase {
 
   /**
-   * @return string
+   * {@inheritdoc}
    */
   public function getFormId() {
     return 'validate_form';
   }
 
   /**
-   * @param array $form
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   * Function adding table
-   */
-  public function addTableCallback(array &$form, FormStateInterface $form_state) {
-    $num_of_rows = $form_state->get('num_of_rows');
-    $num_of_rows['table' . (count($num_of_rows) + 1)] = 1;
-    $form_state->set('num_of_rows', $num_of_rows);
-    $form_state->setRebuild();
-  }
-
-  /**
-   * @param array $form
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   * Function adding row
-   */
-  public function addRowCallback(array &$form, FormStateInterface $form_state) {
-    $num_of_rows = $form_state->get('num_of_rows');
-    $table = array_values(preg_grep("/table.*/", array_keys($_POST)))[0];
-    $num_of_rows[$table]++;
-    $form_state->set('num_of_rows', $num_of_rows);
-    $form_state->setRebuild();
-  }
-
-  /**
-   * @param array $form
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *
-   * @return array
+   * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-
     $num_of_rows = $form_state->get('num_of_rows');
-
+    $cell_value = $form_state->getUserInput();
     if (empty($num_of_rows)) {
       $num_of_rows['table1'] = 1;
       $form_state->set('num_of_rows', $num_of_rows);
@@ -89,14 +59,12 @@ class Form extends FormBase {
       'Dec',
       'Q4',
     ];
-    /*
-     * Adding tables
-     */
+
+    // Adding tables
     for ($j = 1; $j <= count($num_of_rows); $j++) {
       $table = 'table' . $j;
-      /*
-       * Adding table captions
-       */
+
+      // Adding table captions
       $form[$table] = [
         '#type' => 'table',
         '#header' => ['Year'],
@@ -106,32 +74,28 @@ class Form extends FormBase {
       }
 
       array_push($form[$table]['#header'], 'YTD');
-      /*
-       *  Adding rows
-       */
-      $year = date("Y");
+
+      // Adding rows
+      $time_value = \Drupal::time()->getCurrentTime();
+      $year = \Drupal::service('date.formatter')
+        ->format($time_value, 'custom', 'Y');
 
       for ($i = 1; $i <= $num_of_rows[$table]; $i++) {
 
-        /*
-         * Adding cell Year
-         */
+        // Adding cell Year
         $form[$table][$i]['Year'] = [
           '#type' => 'html_tag',
           '#tag' => 'b',
           '#value' => $year - $num_of_rows[$table] + $i,
         ];
 
-        /*
-         * Adding cells month and quarter
-         */
+        // Adding cells month and quarter
         for ($k = 1; $k <= count($name); $k++) {
-          /*
-           * Format name_cell: 'table-row-cell'
-           */
+
+          // Format name_cell: 'table-row-cell'
           $name_cell = $j . '-' . ($num_of_rows[$table] - $i + 1) . '-' . $k;
-          if (isset($_POST[$name_cell])) {
-            $value_cell = $_POST[$name_cell];
+          if (isset($cell_value[$name_cell])) {
+            $value_cell = $cell_value[$name_cell];
           }
           else {
             $value_cell = '';
@@ -139,8 +103,6 @@ class Form extends FormBase {
 
           $form[$table][$i][$name[$k - 1]] = [
             '#type' => 'number',
-            '#name' => $name_cell,
-            '#id' => $name_cell,
             '#value' => $value_cell,
             '#min' => 0,
             '#step' => 0.01,
@@ -153,18 +115,19 @@ class Form extends FormBase {
             ];
           }
           else {
+            $name_cell.= '-month';
             $form[$table][$i][$name[$k - 1]]['#attributes'] = [
               'class' => ['month'],
             ];
           }
+          $form[$table][$i][$name[$k - 1]]['#name']=$name_cell;
+          $form[$table][$i][$name[$k - 1]]['#id']=$name_cell;
         }
 
-        /*
-         * Adding cell YTD
-         */
+        // Adding cell YTD
         $name_cell = $j . '-' . ($num_of_rows[$table] - $i + 1) . '-17';
-        if (isset($_POST[$name_cell])) {
-          $value_cell = $_POST[$name_cell];
+        if (isset($cell_value[$name_cell])) {
+          $value_cell = $cell_value[$name_cell];
         }
         else {
           $value_cell = '';
@@ -181,9 +144,7 @@ class Form extends FormBase {
 
       }
 
-      /*
-       * Adding row add button
-       */
+      // Adding row add button
       $form['add_row_' . $table] = [
         '#type' => 'submit',
         '#value' => $this->t('Add row'),
@@ -193,23 +154,23 @@ class Form extends FormBase {
       ];
 
     }
+    $form['#attached']['library'][] = 'validate/validate_css_js';
     return $form;
   }
 
   /**
-   * @param array $form
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
 
-    if ($_POST['op'] == "Submit") {
+    if (isset($_POST['op']) && $_POST['op'] == "Submit") {
       $array_rows = [];
       $index = -1;
-      foreach ($_POST as $key => $value) {
-        if ((int) $key) {
+      foreach ($form_state->getUserInput() as $key => $value) {
+        if (preg_match('/\d+-\d+-\d+-month/', $key)) {
           $id = explode('-', $key);
           if ($id[0] - 1 > $index) {
-            $index = $id[0] - 1;
+            $index++;
             $array_rows[$index] = '';
           }
           if (!in_array($id[2], [4, 8, 12, 16, 17])) {
@@ -226,9 +187,8 @@ class Form extends FormBase {
           }
         }
       }
-      /*
-       * Search for the longest string
-       */
+
+      // Search for the longest string
       $max_line = '';
       for ($i = 0; $i < count($array_rows); $i++) {
         if (trim($array_rows[$i]) === '') {
@@ -238,9 +198,8 @@ class Form extends FormBase {
           $max_line = $array_rows[$i];
         }
       }
-      /*
-       * Comparison of tables
-       */
+
+      // Comparison of tables
       for ($i = 0; $i < count($array_rows); $i++) {
         if (trim($array_rows[$i]) === '') {
           continue;
@@ -256,8 +215,7 @@ class Form extends FormBase {
   }
 
   /**
-   * @param array $form
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
 
@@ -267,6 +225,45 @@ class Form extends FormBase {
     else {
       \Drupal::messenger()->addError(t('Not valid!'));
     }
+    $form_state->setRebuild();
+  }
+
+  /**
+   * Function adding table
+   *
+   * @param array $form
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   */
+  public function addTableCallback(array &$form, FormStateInterface $form_state) {
+    $this->addCallback(TRUE, $form_state);
+  }
+
+  /**
+   * Function adding row
+   *
+   * @param array $form
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   */
+  public function addRowCallback(array &$form, FormStateInterface $form_state) {
+    $this->addCallback(FALSE, $form_state);
+  }
+
+  /**
+   * Function adding element in form
+   *
+   * @param bool $add
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   */
+  private function addCallback(bool $add, FormStateInterface $form_state) {
+    $num_of_rows = $form_state->get('num_of_rows');
+    if ($add) {
+      $num_of_rows['table' . (count($num_of_rows) + 1)] = 1;
+    }
+    else {
+      $table = array_values(preg_grep("/table.*/", array_keys($_POST)))[0];
+      $num_of_rows[$table]++;
+    }
+    $form_state->set('num_of_rows', $num_of_rows);
     $form_state->setRebuild();
   }
 

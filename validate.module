@@ -1,5 +1,0 @@
-<?php
-
-function validate_page_attachments(array &$page) {
-  $page['#attached']['library'][] = 'validate/validate_css';
-}
