@@ -2,7 +2,6 @@
   Drupal.behaviors.validate = {
     attach() {
       $('.month').change(function () {
-
         if (parseFloat(this.value) < 0) {
           $('#' + this.id).val(0);
         }
@@ -23,19 +22,21 @@
         // value_cells - the value of the months of the quarter
         let value_cells = [];
 
+        let month_cell = '-' + active_cell_id[3];
+
         if ([1, 5, 9, 13].includes(active_cell_n)) {
-          value_cells[0] = getNumberFloat(template + active_cell_n++ + 'month');
-          value_cells[1] = getNumberFloat(template + active_cell_n++ + 'month');
+          value_cells[0] = getNumberFloat(template + active_cell_n++ + month_cell);
+          value_cells[1] = getNumberFloat(template + active_cell_n++ + month_cell);
         }
         else if ([2, 6, 10, 14].includes(active_cell_n)) {
-          value_cells[0] = getNumberFloat(template + (active_cell_n - 1) + 'month');
-          value_cells[1] = getNumberFloat(template + active_cell_n++ + 'month');
+          value_cells[0] = getNumberFloat(template + (active_cell_n - 1) + month_cell);
+          value_cells[1] = getNumberFloat(template + active_cell_n++ + month_cell);
         }
         else {
-          value_cells[0] = getNumberFloat(template + (active_cell_n - 1) + 'month');
-          value_cells[1] = getNumberFloat(template + (active_cell_n - 2) + 'month');
+          value_cells[0] = getNumberFloat(template + (active_cell_n - 1) + month_cell);
+          value_cells[1] = getNumberFloat(template + (active_cell_n - 2) + month_cell);
         }
-        value_cells[2] = getNumberFloat(template + active_cell_n++ + 'month');
+        value_cells[2] = getNumberFloat(template + active_cell_n++ + month_cell);
 
         // quarter - the result of the quarter calculation
         let quarter = value_cells[0] + value_cells[1] + value_cells[2];
