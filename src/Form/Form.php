@@ -108,7 +108,7 @@ class Form extends FormBase {
             ];
           }
           else {
-            $name_cell.= '-month';
+            $name_cell .= '-month';
             $form[$table][$i][$name[$k - 1]]['#attributes'] = [
               'class' => ['month'],
             ];
@@ -120,9 +120,9 @@ class Form extends FormBase {
             $value_cell = '';
           }
 
-          $form[$table][$i][$name[$k - 1]]['#value']=$value_cell;
-          $form[$table][$i][$name[$k - 1]]['#name']=$name_cell;
-          $form[$table][$i][$name[$k - 1]]['#id']=$name_cell;
+          $form[$table][$i][$name[$k - 1]]['#value'] = $value_cell;
+          $form[$table][$i][$name[$k - 1]]['#name'] = $name_cell;
+          $form[$table][$i][$name[$k - 1]]['#id'] = $name_cell;
         }
 
         // Adding cell YTD
@@ -174,12 +174,12 @@ class Form extends FormBase {
             $index++;
             $array_rows[$index] = '';
           }
-            if ($value !== '') {
-              $array_rows[$index] .= '1';
-            }
-            else {
-              $array_rows[$index] .= ' ';
-            }
+          if ($value !== '') {
+            $array_rows[$index] .= '1';
+          }
+          else {
+            $array_rows[$index] .= ' ';
+          }
           if (strpos(trim($array_rows[$index]), ' ')) {
             $form_state->set('valid', FALSE);
             return;
