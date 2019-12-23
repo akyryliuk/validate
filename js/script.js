@@ -22,6 +22,7 @@
         // value_cells - the value of the months of the quarter
         let value_cells = [];
 
+        // month_cell - id suffix
         let month_cell = '-' + active_cell_id[3];
 
         if ([1, 5, 9, 13].includes(active_cell_n)) {

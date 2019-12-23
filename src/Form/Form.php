@@ -164,7 +164,7 @@ class Form extends FormBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
 
-    if (isset($_POST['op']) && $_POST['op'] == "Submit") {
+    if (isset($form_state->getUserInput()['op']) && $form_state->getUserInput()['op'] === "Submit") {
       $array_rows = [];
       $index = -1;
       foreach ($form_state->getUserInput() as $key => $value) {
@@ -174,14 +174,12 @@ class Form extends FormBase {
             $index++;
             $array_rows[$index] = '';
           }
-          if (!in_array($id[2], [4, 8, 12, 16, 17])) {
             if ($value !== '') {
               $array_rows[$index] .= '1';
             }
             else {
               $array_rows[$index] .= ' ';
             }
-          }
           if (strpos(trim($array_rows[$index]), ' ')) {
             $form_state->set('valid', FALSE);
             return;
@@ -224,7 +222,7 @@ class Form extends FormBase {
       \Drupal::messenger()->addStatus('Valid!');
     }
     else {
-      \Drupal::messenger()->addError(t('Not valid!'));
+      \Drupal::messenger()->addError(t('Invalid!'));
     }
     $form_state->setRebuild();
   }
@@ -250,7 +248,7 @@ class Form extends FormBase {
   }
 
   /**
-   * Function adding element in form
+   * Function adding table or row in form
    *
    * @param bool $add
    * @param \Drupal\Core\Form\FormStateInterface $form_state
@@ -261,7 +259,7 @@ class Form extends FormBase {
       $num_of_rows['table' . (count($num_of_rows) + 1)] = 1;
     }
     else {
-      $table = array_values(preg_grep("/table.*/", array_keys($_POST)))[0];
+      $table = array_values(preg_grep("/table.*/", array_keys($form_state->getUserInput())))[0];
       $num_of_rows[$table]++;
     }
     $form_state->set('num_of_rows', $num_of_rows);
