@@ -167,6 +167,7 @@ class Form extends FormBase {
     if (isset($form_state->getUserInput()['op']) && $form_state->getUserInput()['op'] === "Submit") {
       $array_rows = [];
       $index = -1;
+      $max_line = '';
       foreach ($form_state->getUserInput() as $key => $value) {
         if (preg_match('/\d+-\d+-\d+-month/', $key)) {
           $id = explode('-', $key);
@@ -184,17 +185,10 @@ class Form extends FormBase {
             $form_state->set('valid', FALSE);
             return;
           }
-        }
-      }
-
-      // Search for the longest string
-      $max_line = '';
-      for ($i = 0; $i < count($array_rows); $i++) {
-        if (trim($array_rows[$i]) === '') {
-          continue;
-        }
-        elseif (strlen($array_rows[$i]) > strlen($max_line)) {
-          $max_line = $array_rows[$i];
+          // Search for the longest string
+          if($id[1]==1 && $id[2]==15 && trim($array_rows[$index]) !== '' && strlen($array_rows[$index]) > strlen($max_line)){
+            $max_line = $array_rows[$index];
+          }
         }
       }
 
