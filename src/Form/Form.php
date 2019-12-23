@@ -94,16 +94,9 @@ class Form extends FormBase {
 
           // Format name_cell: 'table-row-cell'
           $name_cell = $j . '-' . ($num_of_rows[$table] - $i + 1) . '-' . $k;
-          if (isset($cell_value[$name_cell])) {
-            $value_cell = $cell_value[$name_cell];
-          }
-          else {
-            $value_cell = '';
-          }
 
           $form[$table][$i][$name[$k - 1]] = [
             '#type' => 'number',
-            '#value' => $value_cell,
             '#min' => 0,
             '#step' => 0.01,
           ];
@@ -120,6 +113,14 @@ class Form extends FormBase {
               'class' => ['month'],
             ];
           }
+          if (isset($cell_value[$name_cell])) {
+            $value_cell = $cell_value[$name_cell];
+          }
+          else {
+            $value_cell = '';
+          }
+
+          $form[$table][$i][$name[$k - 1]]['#value']=$value_cell;
           $form[$table][$i][$name[$k - 1]]['#name']=$name_cell;
           $form[$table][$i][$name[$k - 1]]['#id']=$name_cell;
         }
