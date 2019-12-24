@@ -163,44 +163,44 @@ class Form extends FormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-
     if (isset($form_state->getUserInput()['op']) && $form_state->getUserInput()['op'] === "Submit") {
-      $array_rows = [];
-      $index = -1;
-      $max_line = '';
+      $index = 0;
+      $array_rows = ['', ''];
       foreach ($form_state->getUserInput() as $key => $value) {
         if (preg_match('/\d+-\d+-\d+-month/', $key)) {
           $id = explode('-', $key);
-          if ($id[0] - 1 > $index) {
-            $index++;
-            $array_rows[$index] = '';
-          }
-          if ($value !== '') {
-            $array_rows[$index] .= '1';
-          }
-          else {
-            $array_rows[$index] .= ' ';
-          }
+
+          $value !== '' ? $array_rows[$index] .= '1' : $array_rows[$index] .= ' ';
+
           if (strpos(trim($array_rows[$index]), ' ')) {
             $form_state->set('valid', FALSE);
             return;
           }
-          // Search for the longest string
-          if($id[1]==1 && $id[2]==15 && trim($array_rows[$index]) !== '' && strlen($array_rows[$index]) > strlen($max_line)){
-            $max_line = $array_rows[$index];
+          //if end of table (last row and last cell)
+          if ($id[1] == 1 && $id[2] == 15) {
+            if (trim($array_rows[$index]) === '') {
+              $array_rows[$index] = '';
+              continue;
+            }
+            elseif (!$index) {
+              $index = 1;
+            }
+            // Comparison of tables if there are two strings
+            if (!empty($array_rows[0]) && !empty($array_rows[1])) {
+              if (strlen($array_rows[0]) > strlen($array_rows[1])) {
+                $state = substr_compare($array_rows[0], $array_rows[1], strlen($array_rows[0]) - strlen($array_rows[1]));
+              }
+              else {
+                $state = substr_compare($array_rows[1], $array_rows[0], strlen($array_rows[1]) - strlen($array_rows[0]));
+                array_shift($array_rows);
+              }
+              if ($state) {
+                $form_state->set('valid', FALSE);
+                return;
+              }
+              $array_rows[1] = '';
+            }
           }
-        }
-      }
-
-      // Comparison of tables
-      for ($i = 0; $i < count($array_rows); $i++) {
-        if (trim($array_rows[$i]) === '') {
-          continue;
-        }
-        $state = substr_compare($max_line, $array_rows[$i], strlen($max_line) - strlen($array_rows[$i]));
-        if ($state) {
-          $form_state->set('valid', FALSE);
-          return;
         }
       }
       $form_state->set('valid', TRUE);
