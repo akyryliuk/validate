@@ -1,18 +1,28 @@
 .quarter, .month {
-  width: 50px;
+    width: 50px;
 }
 
 .add_row {
-  margin-bottom: 50px;
-  width: 80px;
+    margin-bottom: 50px;
+    width: 80px;
 }
 
 .quarter {
-  background: transparent !important;
-  border: none !important;
-  outline: none;
+    background: transparent !important;
+    border: none !important;
+    outline: none;
 }
 
 .odd, .even {
-  background: #C0C0C0 !important;
+    background: #C0C0C0 !important;
+}
+
+#form-messages-validate {
+  padding: 15px 20px 15px 35px;
+  word-wrap: break-word;
+  border: 1px solid;
+  display: none;
+  border-radius: 2px;
+  overflow-wrap: break-word;
+  margin: 20px 13px;
 }

@@ -2,6 +2,10 @@
 
 namespace Drupal\validate\Form;
 
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\CssCommand;
+use Drupal\Core\Ajax\HtmlCommand;
+use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -29,6 +33,8 @@ class Form extends FormBase {
       $num_of_rows['table1'] = 1;
       $form_state->set('num_of_rows', $num_of_rows);
     }
+    $form['#prefix'] = '<div id="my-id">';
+    $form['#suffix'] = '</div>';
 
     $form['actions']['add_table'] = [
       '#type' => 'submit',
@@ -36,9 +42,18 @@ class Form extends FormBase {
       '#submit' => ['::addTableCallback'],
     ];
 
+    $form['system_messages'] = [
+      '#markup' => '<div id="form-messages-validate"></div>',
+      '#weight' => -100,
+    ];
+
     $form['actions']['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Submit'),
+      '#ajax' => [
+        'callback' => '::validateAndSubmitForm',
+        'progress' => ['type' => 'none'],
+      ],
     ];
 
     $name = [
@@ -163,48 +178,7 @@ class Form extends FormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    if (isset($form_state->getUserInput()['op']) && $form_state->getUserInput()['op'] === "Submit") {
-      $index = 0;
-      $array_rows = ['', ''];
-      foreach ($form_state->getUserInput() as $key => $value) {
-        if (preg_match('/\d+-\d+-\d+-month/', $key)) {
-          $id = explode('-', $key);
 
-          $value !== '' ? $array_rows[$index] .= '1' : $array_rows[$index] .= ' ';
-
-          if (strpos(trim($array_rows[$index]), ' ')) {
-            $form_state->set('valid', FALSE);
-            return;
-          }
-          //if end of table (last row and last cell)
-          if ($id[1] == 1 && $id[2] == 15) {
-            if (trim($array_rows[$index]) === '') {
-              $array_rows[$index] = '';
-              continue;
-            }
-            elseif (!$index) {
-              $index = 1;
-            }
-            // Comparison of tables if there are two strings
-            if (!empty($array_rows[0]) && !empty($array_rows[1])) {
-              if (strlen($array_rows[0]) > strlen($array_rows[1])) {
-                $state = substr_compare($array_rows[0], $array_rows[1], strlen($array_rows[0]) - strlen($array_rows[1]));
-              }
-              else {
-                $state = substr_compare($array_rows[1], $array_rows[0], strlen($array_rows[1]) - strlen($array_rows[0]));
-                array_shift($array_rows);
-              }
-              if ($state) {
-                $form_state->set('valid', FALSE);
-                return;
-              }
-              $array_rows[1] = '';
-            }
-          }
-        }
-      }
-      $form_state->set('valid', TRUE);
-    }
   }
 
   /**
@@ -212,13 +186,81 @@ class Form extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
 
-    if ($form_state->get('valid')) {
-      \Drupal::messenger()->addStatus('Valid!');
+  }
+
+  /**
+   * @param array $form
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *
+   * @return \Drupal\Core\Ajax\AjaxResponse
+   */
+  public function validateAndSubmitForm(array &$form, FormStateInterface $form_state) {
+    $index = 0;
+    $array_rows = ['', ''];
+    $valid = TRUE;
+    foreach ($form_state->getUserInput() as $key => $value) {
+      if (preg_match('/\d+-\d+-\d+-month/', $key)) {
+        $id = explode('-', $key);
+
+        $value !== '' ? $array_rows[$index] .= '1' : $array_rows[$index] .= ' ';
+
+        if (strpos(trim($array_rows[$index]), ' ')) {
+          $valid = FALSE;
+          break;
+        }
+        //if end of table (last row and last cell)
+        if ($id[1] == 1 && $id[2] == 15) {
+          if (trim($array_rows[$index]) === '') {
+            $array_rows[$index] = '';
+            continue;
+          }
+          elseif (!$index) {
+            $index = 1;
+          }
+          // Comparison of tables if there are two strings
+          if (!empty($array_rows[0]) && !empty($array_rows[1])) {
+            if (strlen($array_rows[0]) > strlen($array_rows[1])) {
+              $state = substr_compare($array_rows[0], $array_rows[1], strlen($array_rows[0]) - strlen($array_rows[1]));
+            }
+            else {
+              $state = substr_compare($array_rows[1], $array_rows[0], strlen($array_rows[1]) - strlen($array_rows[0]));
+              array_shift($array_rows);
+            }
+            if ($state) {
+              $valid = FALSE;
+              break;
+            }
+            $array_rows[1] = '';
+          }
+        }
+      }
+    }
+
+    if ($valid) {
+      $messages = 'Valid!';
+      $css = [
+        'display' => 'block',
+        'color' => '#325e1c',
+        'border-color' => '#c9e1bd',
+        'background-color' => '#f3faef',
+        'box-shadow' => '-8px 0 0 #77b259',
+      ];
     }
     else {
-      \Drupal::messenger()->addError(t('Invalid!'));
+      $messages = 'Invalid!';
+      $css = [
+        'display' => 'block',
+        'color' => '#a51b00',
+        'border-color' => '#f9c9bf',
+        'background-color' => '#fcf4f2',
+        'box-shadow' => '-8px 0 0 #e62600',
+      ];
     }
-    $form_state->setRebuild();
+    $selector = '#form-messages-validate';
+    $ajax_response = new AjaxResponse();
+    $ajax_response->addCommand(new CssCommand($selector, $css));
+    $ajax_response->addCommand(new HtmlCommand($selector, $messages));
+    return $ajax_response;
   }
 
   /**
